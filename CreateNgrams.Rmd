@@ -1,0 +1,146 @@
+---
+title: "Data Science Specialization - Capstone - Create Ngram Models"
+author: "Bauyrjan Jyenis"
+date: "8/2/2017"
+output: html_document
+---
+
+# Load required libraries
+
+```{r}
+suppressMessages(library(NLP))
+suppressMessages(library(tm))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(wordcloud))
+suppressMessages(library(dplyr))
+suppressMessages(library(stringi))
+suppressMessages(library(ggplot2))
+suppressMessages(library(ngram))
+suppressMessages(library(quanteda))
+suppressMessages(library(gridExtra))
+suppressMessages(library(stringr))
+suppressMessages(library(data.table))
+```
+
+
+# Load, sample and clean the data
+
+1. Let's first load the data and read lines into variables in R
+
+```{r, warning=FALSE}
+# File path
+file1 <- "./final/en_US/en_US.blogs.txt"
+file2 <- "./final/en_US/en_US.news.txt"
+file3 <- "./final/en_US/en_US.twitter.txt"
+# Read blogs
+connect <- file(file1, open="rb")
+blogs <- readLines(connect, encoding="UTF-8"); close(connect)
+# Read news
+connect <- file(file2, open="rb")
+news <- readLines(connect, encoding="UTF-8"); close(connect)
+# Read twitter
+connect <- file(file3, open="rb")
+twitter <- readLines(connect, encoding="UTF-8"); close(connect)
+rm(connect)
+```
+
+
+2. Since these data are pretty big in size and we only have limited computer memory to process them, we have to sample the data first and then clean the data a bit. In terms of sampling the data, I am going to take 0.1% of each data set to ensure the memory of my machine is sufficient to effectively process the data. I have tried taking 1% but the memory of my machine failed to process it so I had to go for a smaller chunk of the data.
+
+```{r, warning=FALSE}
+set.seed(123)
+# Sampling Blogs
+idxBlogs<-sample(1:length(blogs), 0.001*length(blogs), replace=FALSE)
+sampleBlogs <- blogs[idxBlogs]
+# Sampling News
+idxNews<-sample(1:length(news), 0.001*length(news), replace=FALSE)
+sampleNews <- news[idxNews]
+# Sampling Twitter
+idxTwitter<-sample(1:length(twitter), 0.001*length(twitter), replace=FALSE)
+sampleTwitter <- twitter[idxTwitter]
+# Cleaning
+sampleBlogs <- iconv(sampleBlogs, "UTF-8", "ASCII", sub="")
+sampleNews <- iconv(sampleNews, "UTF-8", "ASCII", sub="")
+sampleTwitter <- iconv(sampleTwitter, "UTF-8", "ASCII", sub="")
+data.sample <- c(sampleBlogs,sampleNews,sampleTwitter)
+```
+
+# Build Corpus and more cleaning
+
+Now that we have sampled our data and combined all three of the data sets into one. We will go ahead and build the corpus which will be used to build the data matrix term later. In this section, we will also apply some more cleaning process to remove lowercase, punctuation, numbers and whitespace.
+
+```{r, warning=FALSE}
+build_corpus <- function (x = data.sample) {
+  sample_c <- VCorpus(VectorSource(x)) # Create corpus dataset
+  sample_c <- tm_map(sample_c, content_transformer(tolower)) # all lowercase
+  sample_c <- tm_map(sample_c, removePunctuation) # Eleminate punctuation
+  sample_c <- tm_map(sample_c, removeNumbers) # Eliminate numbers
+  sample_c <- tm_map(sample_c, stripWhitespace) # Strip Whitespace
+}
+corpusData <- build_corpus(data.sample)
+```
+
+
+# Tokenize and build n-grams
+
+```{r, warning=FALSE}
+# Create ngram tokenizers
+ng1<-function(x) unlist(lapply(ngrams(words(x), 1), paste, collapse = " "), use.names = TRUE)   
+ng2<-function(x) unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = TRUE)
+ng3<-function(x) unlist(lapply(ngrams(words(x), 3), paste, collapse = " "), use.names = TRUE)
+# Create Term Data Matrix based on ngram tokenizers
+#
+# 1-gram
+# Create Term Document Matrix for 1 grams (Words)
+Tdm1g<-TermDocumentMatrix(corpusData, control = list(tokenize = ng1))
+# Remove spars elements otherwise later steps don't work
+Tdm1gns<-removeSparseTerms(Tdm1g, 0.999) 
+# Create a frequency matrix
+freq1g<-rowSums(as.matrix(Tdm1gns))
+# Sort the frequency matrix in descending order
+freq1g<-sort(freq1g, decreasing = TRUE)
+dff1g<-data.frame(w=names(freq1g), freq=freq1g)
+rownames(dff1g)<-c(1:nrow(dff1g))
+dff1g<-data.table(dff1g)
+save(dff1g, file = "freq1.f1.RData")
+               
+# 2-gram
+Tdm2g<-TermDocumentMatrix(corpusData, control = list(tokenize = ng2))
+Tdm2gns<-removeSparseTerms(Tdm2g, 0.999) 
+freq2g<-rowSums(as.matrix(Tdm2gns))
+freq2g<-sort(freq2g, decreasing = TRUE)
+dff2g<-data.frame("Term"=names(freq2g), "Frequency"=freq2g)
+rownames(dff2g)<-c(1:nrow(dff2g))
+dff2g<-data.table(dff2g)
+dff2g$Term<-as.character(dff2g$Term)
+dff2g$Words<-str_replace_all(dff2g$Term, "[[:punct:]]", " ")
+
+# 3-gram
+Tdm3g<-TermDocumentMatrix(corpusData, control = list(tokenize = ng3))
+Tdm3gns<-removeSparseTerms(Tdm3g, 0.999) 
+freq3g<-rowSums(as.matrix(Tdm3gns))
+freq3g<-sort(freq3g, decreasing = TRUE)
+dff3g<-data.frame("Term"=names(freq3g), "Frequency"=freq3g)
+rownames(dff3g)<-c(1:nrow(dff3g))
+dff3g<-data.table(dff3g)
+dff3g$Term<-as.character(dff3g$Term)
+dff3g$Words<-str_replace_all(dff3g$Term, "[[:punct:]]", " ")
+
+# Now let's do some cleaning and save the outputs into files
+library(qdap)
+# 2-gram
+dff2g$w1<-word(dff2g$Words, start=1, sep = " ")
+dff2g$w2<-word(dff2g$Words, start=2, sep = " ")
+df2g<-data.frame(w1=dff2g$w1, w2=dff2g$w2, freq=dff2g$Frequency)
+save(df2g, file = "freq2.f2.RData")
+# 3-gram
+dff3g$w1<-word(dff3g$Words, start=1, sep = " ")
+dff3g$w2<-word(dff3g$Words, start=2, sep = " ")
+dff3g$w3<-word(dff3g$Words, start=3, sep = " ")
+df3g<-data.frame(w1=dff3g$w1, w2=dff3g$w2, w3=dff3g$w3, freq=dff3g$Frequency)
+save(df3g, file = "freq3.f3.RData")
+# Create a list of ngrams all together
+ngramsList<- list("f1" = dff1g, "f2" = df2g, "f3" = df3g)
+save(ngramsList, file="nfreq.v5.RData")
+```
+
