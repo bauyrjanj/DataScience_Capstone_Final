@@ -11,7 +11,7 @@ library(stringr)
 load("nfreq.v5.RData")
 message<-""
 ## Function that predicts the next word
-predicWord<-function(txt.in){
+predictWord<-function(txt.in){
         count<-as.numeric(wc(txt.in))
         if (count==2) {
                 l<-ngramsList[[3]]
@@ -40,7 +40,7 @@ predicWord<-function(txt.in){
 # Define server logic required to summarize and view the selected dataset
 shinyServer(function(input, output) {
             output$word_next<-renderPrint({
-                    result<-predicWord(input$obs)
+                    result<-predictWord(input$obs)
                     output$sentence<- renderText({message})
                     result
               })

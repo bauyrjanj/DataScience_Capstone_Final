@@ -11,22 +11,14 @@ This presentation is created to fullfill the requirements of the Data Science Ca
 
 The goal of this project is to build a predictive text model by analyzing a large corpus of text documents to discover the structure in the data and how words are put together. My work will cover cleaning and analyzing text data, then building and sampling from a predictive text model. Finally, I will present the predictive text product that I have built using Shiny application.
 
-[Shiny App] - []
-
-[Github Repo] - []
 
 ## Getting and preparing data
 
 1. Sampling data
-
 I have used Blog, News and Twitter data sets to build my text model. Since these data sets are pretty big in size, I had to sample the data first and 0.1% of each data set is sampled to due to the memory capacity of my machine.
-
 2. Cleaning data
-
 Data cleaning process includes converstion to all lower cases, elimination of punctuations, elimination of numbers, and striping whitespaces. 
-
 3. Create ngrams 
-
 The corresponding n-grams are created with descending order frequencies and combined into a single list which is exported as RData file for further use by the prediction algorithm.
 
 ## Next word prediction model
@@ -43,11 +35,11 @@ The prediction model for next word is based on the Katz Back-off algorithm.
 
 ## Shiny Application and References
 
-Important Note: 
+The Shiny application I have built is not perfect at the moment, I will continue to work on some improvements. For example, I will be looking at effectively using reactive observer in the server.R and setting up dynamic initial value for the text input. Also, I will be looking to include quadGram and beyond.
 
-Upon launching my Shiny App, you might see error message saying "missing value where TRUE/FALSE needed". Please ignore this error message and it works fine! I will continue to work on improvements to my Shiny App.
+[Shiny App] - [https://bauyrjanj.shinyapps.io/Final/]
 
-
+[Github Repo] - [https://github.com/bauyrjanj/DataScience_Capstone_Final]
 
 
 

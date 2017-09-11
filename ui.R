@@ -9,7 +9,7 @@ shinyUI(fluidPage(
                 sidebarPanel(
                         helpText("ENTER A WORD, OR SET OF WORDS TO GET THE NEXT WORD PREDICTED"),
                         hr(),
-                        textInput("obs", "Enter Your Input Text Here:"),
+                        textInput("obs", "Enter Your Input Text Here:", value = "you"),
                         submitButton("Submit"),
                         hr(),
                         helpText("1 - ONCE THE INPUT IS ENTERED AND SUBMITTED, THE NEXT WORD IS PREDICTED AND OUTPUTTED.", 
@@ -27,7 +27,6 @@ shinyUI(fluidPage(
                         h3("NEXT WORD:"),
                         textOutput("word_next"),
                         hr(),
-                        strong("Please ignore the error message 'missing value where TRUE/FALSE needed'"),
                         strong(code(textOutput('sentence'))),
                         hr(),
                         helpText("THE PREDICTION MODEL IS BASED ON KATZ-BACK OFF ALGORITHM"),
